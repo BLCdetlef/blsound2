@@ -37,7 +37,7 @@ body {
     max-width: 100%;
     margin: 0;
     text-align: left;
-    padding-left: 3cm;
+    padding-left: 2cm;
     padding-right: 3cm;
     display: flex;
     flex-direction: column;
@@ -87,7 +87,7 @@ body {
 /* Info-Sektion (rechte Spalte) */
 .info-section {
     flex: 4;
-    min-width: 1000px;
+    min-width: 800px;
     display: flex;
     flex-direction: column;
     gap: 20px;
