@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLSound2 - Modernes Soundboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>BRUCHLASTsound - Modernes Soundboard</title>
+    <link rel="stylesheet" href="styles.css?v=1.1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -13,134 +13,48 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <div class="header-content">
-                <h1 class="logo">
-                    <span class="logo-bl">BL</span>
-                    <span class="logo-sound">sound</span>
-                    <span class="logo-version">2</span>
-                </h1>
-                <button id="introBOTBtn" class="btn-intro">
-                    <span class="btn-icon">🎵</span>
-                    <span class="btn-text">Intro BOT</span>
-                </button>
-            </div>
+            <h1 class="logo">
+                <span class="logo-bl">BRUCHLAST</span>
+                <span class="logo-sound">sound</span>
+            </h1>
+            <button id="introBOTBtn" class="btn-intro">
+                <span class="btn-text"><span class="intro-text">intro</span> BOT</span>
+            </button>
         </header>
 
         <!-- Hauptbereich -->
         <main class="main-content">
-            <!-- Nummernblock - Links -->
+            <!-- Nummernblock - Übernommen von bestehender Website -->
             <section class="numberpad-section">
                 <div class="section-header">
-                    <h2>🎵 Nummernblock</h2>
                     <div class="display-container">
                         <div id="numberDisplay" class="number-display">000</div>
-                        <div class="display-label">Aktuelle Nummer</div>
+                        <div class="display-label">Bitte eine dreistellige Nummer eingeben und PLAY drücken</div>
                     </div>
                 </div>
                 
-                <!-- 999 Nummern-Buttons Grid -->
+                <!-- 3x3 Nummernblock-Grid mit integrierten Steuerungs-Buttons -->
                 <div class="numberpad-grid" id="numberpadGrid">
-                    <!-- Buttons werden dynamisch generiert -->
-                </div>
-                
-                <div class="control-buttons">
+                    <button class="number-btn" data-number="1">1</button>
+                    <button class="number-btn" data-number="2">2</button>
+                    <button class="number-btn" data-number="3">3</button>
+                    <button class="number-btn" data-number="4">4</button>
+                    <button class="number-btn" data-number="5">5</button>
+                    <button class="number-btn" data-number="6">6</button>
+                    <button class="number-btn" data-number="7">7</button>
+                    <button class="number-btn" data-number="8">8</button>
+                    <button class="number-btn" data-number="9">9</button>
+                    <button class="number-btn zero" data-number="0">0</button>
                     <button id="clearBtn" class="control-btn clear-btn">
-                        <span class="btn-icon">🗑️</span>
-                        <span class="btn-text">Löschen</span>
+                        <span class="btn-icon">⏹</span>
                     </button>
                     <button id="playBtn" class="control-btn play-btn">
-                        <span class="btn-icon">▶️</span>
-                        <span class="btn-text">Abspielen</span>
+                        <span class="btn-icon">▶</span>
                     </button>
                 </div>
             </section>
 
-            <!-- Aufnahme-Panel - Rechts -->
-            <section class="recording-section">
-                <div class="section-header">
-                    <h2>🎙️ Audio-Aufnahme</h2>
-                    <p class="section-description">Nehmen Sie Ihre eigenen Audio-Beiträge auf</p>
-                </div>
-                
-                <!-- Aufnahme-Status -->
-                <div class="recording-status">
-                    <div class="status-indicator">
-                        <div class="status-dot" id="statusDot"></div>
-                        <span class="status-text" id="recordingStatus">Bereit für Aufnahme</span>
-                    </div>
-                    <div class="recording-controls">
-                        <button id="recordBtn" class="btn btn-record">
-                            <span class="btn-icon">🎙️</span>
-                            <span class="btn-text">Aufnahme starten</span>
-                        </button>
-                        <button id="stopBtn" class="btn btn-stop" style="display: none;">
-                            <span class="btn-icon">⏹️</span>
-                            <span class="btn-text">Aufnahme stoppen</span>
-                        </button>
-                        <button id="deleteBtn" class="btn btn-delete" style="display: none;">
-                            <span class="btn-icon">🗑️</span>
-                            <span class="btn-text">Aufnahme löschen</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Aufnahme-Vorschau -->
-                <div class="recording-preview" id="recordingPreview" style="display: none;">
-                    <h3>🎧 Aufnahme-Vorschau</h3>
-                    <audio id="previewAudio" controls></audio>
-                </div>
-
-                <!-- Speichern-Formular -->
-                <div class="save-form" id="saveForm" style="display: none;">
-                    <h3>💾 Aufnahme speichern</h3>
-                    <form id="recordingForm" class="form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="firstName">Vorname *</label>
-                                <input type="text" id="firstName" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="lastName">Nachname *</label>
-                                <input type="text" id="lastName" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">E-Mail *</label>
-                            <input type="email" id="email" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="recordingName">Aufnahme-Name *</label>
-                            <input type="text" id="recordingName" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="description">Beschreibung (optional)</label>
-                            <textarea id="description" class="form-control" rows="3" placeholder="Beschreiben Sie Ihre Aufnahme..."></textarea>
-                        </div>
-                        <div class="consent-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="consentCheckbox" required>
-                                <span>Ich stimme zu, dass meine Aufnahme gespeichert und verarbeitet wird.</span>
-                            </label>
-                        </div>
-                        <button type="submit" id="saveBtn" class="btn btn-save">
-                            <span class="btn-icon">💾</span>
-                            <span class="btn-text">Aufnahme speichern</span>
-                        </button>
-                    </form>
-                </div>
-            </section>
         </main>
-
-        <!-- Status-Bereich -->
-        <footer class="status-section">
-            <div class="status-content">
-                <div id="statusDisplay" class="status-display">🚀 BLSound2 bereit</div>
-                <div id="environmentInfo" class="environment-info"></div>
-            </div>
-        </footer>
-
-        <!-- Benachrichtigungen -->
-        <div id="notificationContainer" class="notification-container"></div>
     </div>
 
     <script src="script.js"></script>
