@@ -29,23 +29,26 @@ body {
     min-height: 100vh;
     line-height: 1.2;
     overflow-x: hidden;
-    padding: 20px;
+    padding: 0;
 }
 
-/* Container - Minimalistisch wie bestehende Website */
+/* Container - Optimiert für Tablet im Querformat */
 .container {
-    max-width: 600px;
-    margin: 0 auto;
-    text-align: center;
+    max-width: 100%;
+    margin: 0;
+    text-align: left;
+    padding-left: 3cm;
+    padding-right: 3cm;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-/* Header - Exakt wie bestehende Website */
-.header {
-    margin-bottom: 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
+/* Logo-Sektion unter dem Nummernblock */
+.logo-section {
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px 0;
 }
 
 .logo {
@@ -69,48 +72,165 @@ body {
     text-transform: lowercase;
 }
 
-/* Intro BOT Button - Exakt wie bestehende Website */
-.btn-intro {
-    background: var(--button-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--accent-color);
-    padding: 8px 16px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.9rem;
-    margin-bottom: 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    align-self: center;
-}
-
-.btn-intro:hover {
-    background: var(--accent-color);
-    color: var(--primary-color);
-}
-
-.intro-text {
-    color: #ffff00;
-    font-style: italic;
-    text-transform: lowercase;
-}
-
 /* Hauptbereich - Minimalistisch wie bestehende Website */
 .main-content {
     margin-bottom: 40px;
 }
 
-/* Nummernblock-Sektion - Exakt wie bestehende Website */
+/* Content Wrapper für zweispaltiges Layout */
+.content-wrapper {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+/* Info-Sektion (rechte Spalte) */
+.info-section {
+    flex: 4;
+    min-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* BRUCHLASTchart Container */
+.chart-container {
+    background: var(--secondary-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 5px;
+    padding: 0 40px 40px 40px;
+    height: 400px;
+}
+
+/* .chart-title entfernt */
+
+.chart-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.chart-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.chart-label {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: bold;
+    min-width: 120px;
+}
+
+.chart-iframe {
+    width: 100%;
+    height: 300px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--primary-color);
+}
+
+.chart-controls {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-btn {
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--accent-color);
+    border-radius: 3px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.chart-btn:hover {
+    background: var(--accent-color);
+    color: var(--primary-color);
+}
+
+.chart-select {
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--accent-color);
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.chart-select option {
+    background: var(--button-bg);
+    color: var(--text-primary);
+}
+
+/* MP3-Info Container */
+.mp3-info-container {
+    background: var(--secondary-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 5px;
+    padding: 40px;
+    height: 250px;
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.mp3-info-title {
+    color: var(--accent-color);
+    font-size: 1.4rem;
+    font-weight: bold;
+    text-align: right;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: -15px;
+}
+
+.mp3-info-content {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    line-height: 1.4;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.mp3-info-text {
+    margin: 0;
+    text-align: center;
+}
+
+.mp3-info-item {
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mp3-info-item:last-child {
+    border-bottom: none;
+}
+
+/* Nummernblock-Sektion - Optimiert für Tablet im Querformat */
 .numberpad-section {
     background: transparent;
     border: none;
     padding: 0;
     text-align: center;
+    margin: 0;
 }
 
 .section-header {
-    margin-bottom: 30px;
+    margin-bottom: 10px;
+    margin-top: 1cm;
 }
 
 .section-header h2 {
@@ -122,20 +242,20 @@ body {
     font-weight: normal;
 }
 
-/* Display-Container - Exakt wie bestehende Website */
+/* Display-Container - Optimiert für Tablet im Querformat */
 .display-container {
-    background: var(--display-bg);
-    border: 2px solid var(--accent-color);
-    border-radius: 5px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     padding: 20px;
-    margin: 20px auto;
+    margin: 10px auto 0 auto;
     max-width: 250px;
     box-shadow: none;
 }
 
 .number-display {
     font-family: Calibri, sans-serif;
-    font-size: 2rem;
+    font-size: 4rem;
     font-weight: bold;
     color: var(--display-text);
     text-shadow: none;
@@ -145,18 +265,28 @@ body {
 
 .display-label {
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 1.2rem;
     text-transform: none;
     letter-spacing: 1px;
     font-weight: normal;
+    text-align: center;
 }
 
-/* Nummernblock-Grid - Exakt wie bestehende Website */
+.label-line1 {
+    margin-bottom: 5px;
+}
+
+.label-line2 {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* Nummernblock-Grid - Optimiert für Tablet im Querformat */
 .numberpad-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    max-width: 200px;
+    gap: 15px;
+    max-width: 300px;
     margin: 0 auto 20px auto;
 }
 
@@ -165,8 +295,8 @@ body {
     color: var(--text-primary);
     border: 1px solid var(--accent-color);
     border-radius: 3px;
-    padding: 15px;
-    font-size: 1.2rem;
+    padding: 20px;
+    font-size: 1.8rem;
     font-weight: bold;
     cursor: pointer;
     transition: none;
@@ -207,8 +337,8 @@ body {
     color: var(--text-primary);
     border: 1px solid var(--accent-color);
     border-radius: 3px;
-    padding: 15px;
-    font-size: 1.2rem;
+    padding: 20px;
+    font-size: 1.8rem;
     cursor: pointer;
     transition: none;
     font-family: inherit;

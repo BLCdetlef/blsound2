@@ -11,50 +11,80 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1 class="logo">
-                <span class="logo-bl">BRUCHLAST</span>
-                <span class="logo-sound">sound</span>
-            </h1>
-            <button id="introBOTBtn" class="btn-intro">
-                <span class="btn-text"><span class="intro-text">intro</span> BOT</span>
-            </button>
-        </header>
-
         <!-- Hauptbereich -->
         <main class="main-content">
-            <!-- Nummernblock - Übernommen von bestehender Website -->
-            <section class="numberpad-section">
-                <div class="section-header">
+            <div class="content-wrapper">
+                <!-- Linke Spalte: Nummernblock -->
+                <section class="numberpad-section">
+                    <div class="section-header">
+                        <div class="display-label">
+                            <div class="label-line1">Bitte eine dreistellige Nummer eingeben</div>
+                            <div class="label-line2">und PLAY drücken</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 000-Anzeige zwischen Text und Nummernblock -->
                     <div class="display-container">
                         <div id="numberDisplay" class="number-display">000</div>
-                        <div class="display-label">Bitte eine dreistellige Nummer eingeben und PLAY drücken</div>
                     </div>
-                </div>
-                
-                <!-- 3x3 Nummernblock-Grid mit integrierten Steuerungs-Buttons -->
-                <div class="numberpad-grid" id="numberpadGrid">
-                    <button class="number-btn" data-number="1">1</button>
-                    <button class="number-btn" data-number="2">2</button>
-                    <button class="number-btn" data-number="3">3</button>
-                    <button class="number-btn" data-number="4">4</button>
-                    <button class="number-btn" data-number="5">5</button>
-                    <button class="number-btn" data-number="6">6</button>
-                    <button class="number-btn" data-number="7">7</button>
-                    <button class="number-btn" data-number="8">8</button>
-                    <button class="number-btn" data-number="9">9</button>
-                    <button class="number-btn zero" data-number="0">0</button>
-                    <button id="clearBtn" class="control-btn clear-btn">
-                        <span class="btn-icon">⏹</span>
-                    </button>
-                    <button id="playBtn" class="control-btn play-btn">
-                        <span class="btn-icon">▶</span>
-                    </button>
-                </div>
-            </section>
+                    
+                    <!-- 3x3 Nummernblock-Grid mit integrierten Steuerungs-Buttons -->
+                    <div class="numberpad-grid" id="numberpadGrid">
+                        <button class="number-btn" data-number="1">1</button>
+                        <button class="number-btn" data-number="2">2</button>
+                        <button class="number-btn" data-number="3">3</button>
+                        <button class="number-btn" data-number="4">4</button>
+                        <button class="number-btn" data-number="5">5</button>
+                        <button class="number-btn" data-number="6">6</button>
+                        <button class="number-btn" data-number="7">7</button>
+                        <button class="number-btn" data-number="8">8</button>
+                        <button class="number-btn" data-number="9">9</button>
+                        <button class="number-btn zero" data-number="0">0</button>
+                        <button id="clearBtn" class="control-btn clear-btn">
+                            <span class="btn-icon">⏹</span>
+                        </button>
+                        <button id="playBtn" class="control-btn play-btn">
+                            <span class="btn-icon">▶</span>
+                        </button>
+                                         </div>
+                     
+                     <!-- Logo unter dem Nummernblock -->
+                     <div class="logo-section">
+                         <h1 class="logo">
+                             <span class="logo-bl">BRUCHLAST</span>
+                             <span class="logo-sound">sound</span>
+                         </h1>
+                     </div>
+                 </section>
+ 
+                 <!-- Rechte Spalte: BRUCHLASTchart und MP3-Info -->
+                <section class="info-section">
+                    <!-- BRUCHLASTchart -->
+                    <div class="chart-container">
+                        <div class="chart-content">
+                            <iframe 
+                                id="blchartFrame" 
+                                src="https://blcdetlef.github.io/BLChart/" 
+                                class="chart-iframe"
+                                title="BRUCHLASTchart Live-Ansicht">
+                            </iframe>
+                        </div>
+                        <div class="chart-controls">
+                            <button id="chartRefreshBtn" class="chart-btn">Chart neu laden</button>
+                            <button id="chartFullscreenBtn" class="chart-btn">Vollbild</button>
+                        </div>
+                    </div>
 
-        </main>
+                    <!-- MP3-Tag Info -->
+                    <div class="mp3-info-container">
+                        <h3 class="mp3-info-title">MP3-Info</h3>
+                        <div id="mp3Info" class="mp3-info-content">
+                            <p class="mp3-info-text">Wählen Sie eine Nummer aus, um die MP3-Informationen anzuzeigen</p>
+                        </div>
+                    </div>
+                </section>
+                         </div>
+         </main>
     </div>
 
     <script src="script.js"></script>
