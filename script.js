@@ -92,7 +92,7 @@ class BLSoundboard {
                 return;
             }
             
-        this.playSound(this.currentNumber);
+            this.playSound(this.currentNumber);
     }
     
     /**
@@ -126,9 +126,9 @@ class BLSoundboard {
         this.currentAudio.addEventListener('ended', () => {
             console.log('Audio beendet');
             this.updateStatus('🚀 BLSound2 bereit');
-            this.currentAudio = null;
-        });
-        
+                this.currentAudio = null;
+            });
+            
         this.currentAudio.addEventListener('error', (e) => {
             console.error('Fehler beim Abspielen des Audio:', e);
             this.updateStatus('❌ Fehler beim Abspielen');
