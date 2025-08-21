@@ -72,6 +72,52 @@ body {
     text-transform: lowercase;
 }
 
+/* Play-Symbol im Label */
+.play-symbol {
+    color: var(--accent-color);
+    font-size: 1.2em;
+    vertical-align: middle;
+    margin: 0 2px;
+}
+
+/* IntroBOT-Schalter */
+.intro-bot-btn {
+    background: #333333;
+    border: 2px solid #ffff00;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    margin-left: 15px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    vertical-align: middle;
+}
+
+.intro-bot-btn:hover {
+    background: #444444;
+    border-color: #ffffff;
+    transform: scale(1.1);
+}
+
+.intro-bot-btn:active {
+    transform: scale(0.95);
+}
+
+.intro-bot-icon {
+    color: #ffff00;
+    font-style: italic;
+    font-weight: bold;
+    font-size: 20px;
+    line-height: 1;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    text-shadow: 0 0 4px rgba(255, 255, 0, 0.8);
+    transform: rotate(-3deg);
+    letter-spacing: 0.5px;
+}
+
 /* Hauptbereich - Minimalistisch wie bestehende Website */
 .main-content {
     margin-bottom: 40px;

@@ -65,6 +65,14 @@ class BLSoundboard {
             });
         }
 
+        // IntroBOT-Button
+        const introBOTButton = document.querySelector('#introBOTBtn');
+        if (introBOTButton) {
+            introBOTButton.addEventListener('click', () => {
+                this.activateIntroBOT();
+            });
+        }
+
         // Tastatur-Shortcuts
         document.addEventListener('keydown', (e) => {
             this.handleKeyboardShortcuts(e);
@@ -705,8 +713,48 @@ class BLSoundboard {
     clearMP3Info() {
         const mp3Info = document.getElementById('mp3Info');
         if (mp3Info) {
-            mp3Info.innerHTML = '<p class="mp3-info-text">Wählen Sie eine Nummer aus, um die MP3-Informationen anzuzeigen</p>';
+            mp3Info.innerHTML = '<p class="mp3-info-text">Hier gibt\'s mehr Details zu den Kurven des BRUCHLASTchart, wenn eine 3-stellige Zahl eingegeben wurde, z.B. "001".</p>';
         }
+    }
+
+    activateIntroBOT() {
+        // Stoppe aktuellen Sound
+        this.stopCurrentAudio();
+        
+        // Setze Display zurück
+        this.currentNumber = '';
+        this.updateDisplay();
+        
+        // Spiele IntroBOT Sound
+        this.playSound('BLC_introaudio');
+        
+        // Zeige IntroBOT Info
+        this.showIntroBOTInfo();
+        
+        // Benachrichtigung
+        this.showNotification('IntroBOT aktiviert!', 'info');
+    }
+
+    showIntroBOTInfo() {
+        const mp3Info = document.getElementById('mp3Info');
+        if (!mp3Info) return;
+
+        const info = `
+            <div class="mp3-info-item">
+                <strong>Dateiname:</strong> BLC_introaudio.mp3
+            </div>
+            <div class="mp3-info-item">
+                <strong>Titel:</strong> BRUCHLAST IntroBOT
+            </div>
+            <div class="mp3-info-item">
+                <strong>Interpret:</strong> BRUCHLAST
+            </div>
+            <div class="mp3-info-item">
+                <strong>Kommentar:</strong> IntroBOT aktiviert - Willkommen bei BRUCHLASTsound!
+            </div>
+        `;
+        
+        mp3Info.innerHTML = info;
     }
 }
 
