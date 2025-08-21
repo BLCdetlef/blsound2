@@ -50,7 +50,7 @@ class BLSoundboard {
         });
 
         // Play-Button
-        const playButton = document.querySelector('.play-btn');
+        const playButton = document.querySelector('#playBtn');
         if (playButton) {
             playButton.addEventListener('click', () => {
                 this.playCurrentNumber();
@@ -58,7 +58,7 @@ class BLSoundboard {
         }
 
         // Clear-Button
-        const clearButton = document.querySelector('.clear-btn');
+        const clearButton = document.querySelector('#clearBtn');
         if (clearButton) {
             clearButton.addEventListener('click', () => {
                 this.clearAndStop();
