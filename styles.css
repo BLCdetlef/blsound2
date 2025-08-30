@@ -228,18 +228,20 @@ body {
     padding: 40px;
     height: 250px;
     margin-bottom: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .mp3-info-title {
     color: var(--accent-color);
     font-size: 1.4rem;
     font-weight: bold;
-    text-align: right;
+    text-align: left;
     margin-bottom: 20px;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-top: -15px;
+    display: block;
+    width: 100%;
 }
 
 
@@ -248,23 +250,72 @@ body {
     color: var(--text-primary);
     font-size: 1.1rem;
     line-height: 1.4;
-    max-height: 150px;
+    max-height: 200px;
     overflow-y: auto;
+    width: 100%;
+    text-align: left;
 }
 
 .mp3-info-text {
     margin: 0;
-    text-align: center;
+    text-align: left;
 }
 
+
+
+/* Alle MP3-Info Items einheitlich linksbündig mit kleinem Abstand */
 .mp3-info-item {
-    margin: 8px 0;
-    padding: 5px 0;
+    margin: 0 !important;
+    padding: 0 !important;
     border-bottom: 1px solid var(--border-color);
+    text-align: left !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.2;
 }
 
-.mp3-info-item:last-child {
-    border-bottom: none;
+/* Stärkere Linksbündigkeit für alle MP3-Info Elemente */
+.mp3-info-title,
+.mp3-info-content,
+.mp3-info-text,
+.mp3-info-item {
+    text-align: left !important;
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Spezifische Regeln für dynamisch generierte MP3-Info Items */
+#mp3Info .mp3-info-item {
+    text-align: left !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#mp3Info .mp3-info-item strong {
+    text-align: left !important;
+    display: inline !important;
+}
+
+#mp3Info .comment-text {
+    text-align: left !important;
+    display: inline !important;
+}
+
+/* Kommentar-Text speziell formatieren */
+.comment-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    display: inline-block;
+    max-width: 100%;
+    min-width: 300px;
+    font-size: 0.95rem;
+    line-height: 1.3;
 }
 
 /* Nummernblock-Sektion - Optimiert für Tablet im Querformat */

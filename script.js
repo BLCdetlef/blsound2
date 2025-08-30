@@ -100,15 +100,18 @@ class BLSoundboard {
         }
     }
 
-    playSound(number) {
+    async playSound(number) {
         const paddedNumber = number.padStart(3, '0');
         const soundPath = `sounds/${paddedNumber}.mp3`;
         
         // Stoppe aktuellen Sound
         this.stopCurrentAudio();
         
-        // Prüfe ob Datei existiert
-        if (this.availableSounds.includes(`${paddedNumber}.mp3`)) {
+        // Prüfe ob Datei existiert (Lazy Loading)
+        const fileExists = await this.checkFileExists(`${paddedNumber}.mp3`);
+        
+        if (fileExists) {
+            // Datei existiert - spiele sie ab
             try {
                 this.currentAudio = new Audio(soundPath);
                 this.currentAudio.play();
@@ -131,8 +134,36 @@ class BLSoundboard {
                 this.showNotification('Fehler beim Abspielen der Audiodatei', 'error');
             }
         } else {
-            this.updateStatus('Sound nicht gefunden');
-            this.showNotification(`Sound ${paddedNumber} nicht gefunden`, 'warning');
+            // Datei existiert nicht - spiele 999.mp3 als Fallback
+            console.log(`Sound ${paddedNumber} nicht gefunden - spiele 999.mp3 als Fallback`);
+            this.playFallbackSound();
+        }
+    }
+    
+    playFallbackSound() {
+        const fallbackPath = 'sounds/999.mp3';
+        
+        try {
+            this.currentAudio = new Audio(fallbackPath);
+            this.currentAudio.play();
+            this.isPlaying = true;
+            this.updateStatus('Spiele Fallback Sound 999');
+            this.showNotification('Sound nicht gefunden - spiele 999.mp3', 'warning');
+            
+            this.currentAudio.onended = () => {
+                this.isPlaying = false;
+                this.updateStatus('Bereit');
+            };
+            
+            this.currentAudio.onerror = () => {
+                this.updateStatus('Fehler beim Abspielen');
+                this.showNotification('Fehler beim Abspielen der Fallback-Datei', 'error');
+            };
+            
+        } catch (error) {
+            console.error('Fehler beim Abspielen des Fallback-Sounds:', error);
+            this.updateStatus('Fehler beim Abspielen');
+            this.showNotification('Fehler beim Abspielen der Fallback-Datei', 'error');
         }
     }
 
@@ -160,7 +191,104 @@ class BLSoundboard {
     }
 
     loadMP3Tags(filePath, fileName) {
-        this.loadFileWithXHR(filePath, fileName);
+        // Verwende die externe jsmediatags-Bibliothek für bessere Tag-Unterstützung
+        if (typeof jsmediatags !== 'undefined') {
+            this.loadWithJSMediaTags(filePath, fileName);
+        } else {
+            this.loadFileWithXHR(filePath, fileName);
+        }
+    }
+
+    loadWithJSMediaTags(filePath, fileName) {
+        console.log('Verwende JSMediaTags für:', filePath);
+        
+        try {
+            jsmediatags.read(filePath, {
+                onSuccess: (tag) => {
+                    console.log('JSMediaTags erfolgreich geladen:', tag);
+                    this.displayJSMediaTags(tag, fileName);
+                },
+                onError: (error) => {
+                    console.error('JSMediaTags Fehler:', error);
+                    // Fallback zu manuellem Parsing
+                    this.loadFileWithXHR(filePath, fileName);
+                }
+            });
+        } catch (error) {
+            console.error('JSMediaTags Exception:', error);
+            // Fallback zu manuellem Parsing
+            this.loadFileWithXHR(filePath, fileName);
+        }
+    }
+
+    displayJSMediaTags(tag, fileName) {
+        const mp3Info = document.getElementById('mp3Info');
+        if (!mp3Info) return;
+
+        // Debug: Zeige alle verfügbaren Tags
+        console.log('=== DEBUG für', fileName, '===');
+        console.log('Alle verfügbaren Tags:', tag);
+        console.log('tag.tags:', tag.tags);
+
+        // Extrahiere Titel und Kommentar aus den echten MP3-Tags
+        let title = 'Unbekannt';
+        let comment = 'Kein Kommentar';
+
+        // Titel aus verschiedenen Feldern suchen
+        if (tag.tags && tag.tags.title) {
+            title = tag.tags.title;
+            console.log('Titel gefunden (title):', title);
+        } else if (tag.tags && tag.tags.TIT2) {
+            title = tag.tags.TIT2.data;
+            console.log('Titel gefunden (TIT2):', title);
+        }
+
+        // Kommentar aus verschiedenen Feldern suchen
+        if (tag.tags && tag.tags.comment) {
+            comment = tag.tags.comment;
+            console.log('Kommentar gefunden (comment):', comment);
+        } else if (tag.tags && tag.tags.COMM) {
+            comment = tag.tags.COMM.data;
+            console.log('Kommentar gefunden (COMM):', comment);
+        } else if (tag.tags && tag.tags.USLT) {
+            comment = tag.tags.USLT.data;
+            console.log('Kommentar gefunden (USLT):', comment);
+        }
+
+        // Versuche auch andere mögliche Kommentar-Felder
+        if (tag.tags) {
+            for (let key in tag.tags) {
+                if (key.toLowerCase().includes('comment') || key.toLowerCase().includes('comm')) {
+                    console.log('Möglicher Kommentar-Feld gefunden:', key, '=', tag.tags[key]);
+                }
+            }
+        }
+
+        // Nur als Fallback: Prüfe bekannte Metadaten, wenn echte Tags leer sind
+        if ((!title || title === 'Unbekannt') && (!comment || comment === 'Kein Kommentar')) {
+            const knownMetadata = this.getKnownMP3Metadata(fileName);
+            if (knownMetadata) {
+                console.log('Verwende bekannte Metadaten als Fallback für', fileName);
+                if (knownMetadata.title) title = knownMetadata.title;
+                if (knownMetadata.comment) comment = knownMetadata.comment;
+            }
+        } else {
+            console.log('Verwende echte MP3-Tags für', fileName);
+        }
+
+        console.log('Finale Werte - Titel:', title, 'Kommentar:', comment);
+        console.log('=== ENDE DEBUG ===');
+
+        const info = `
+            <div class="mp3-info-item" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Titel:</strong> ${title}
+            </div>
+            <div class="mp3-info-item" data-field="kommentar" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Kommentar:</strong> <span class="comment-text" style="text-align: left !important;">${comment}</span>
+            </div>
+        `;
+        
+        mp3Info.innerHTML = info;
     }
 
     loadFileWithXHR(filePath, fileName) {
@@ -196,18 +324,28 @@ class BLSoundboard {
         const mp3Info = document.getElementById('mp3Info');
         if (!mp3Info) return;
 
+        // Verwende die echten MP3-Tags
+        let title = tags.title || 'Unbekannt';
+        let comment = tags.comment || 'Kein Kommentar';
+
+        // Nur als Fallback: Prüfe bekannte Metadaten, wenn echte Tags leer sind
+        if ((!title || title === 'Unbekannt') && (!comment || comment === 'Kein Kommentar')) {
+            const knownMetadata = this.getKnownMP3Metadata(fileName);
+            if (knownMetadata) {
+                console.log('Verwende bekannte Metadaten als Fallback für', fileName);
+                if (knownMetadata.title) title = knownMetadata.title;
+                if (knownMetadata.comment) comment = knownMetadata.comment;
+            }
+        } else {
+            console.log('Verwende echte MP3-Tags für', fileName);
+        }
+
         const info = `
-            <div class="mp3-info-item">
-                <strong>Dateiname:</strong> ${fileName}.mp3
+            <div class="mp3-info-item" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Titel:</strong> ${title}
             </div>
-            <div class="mp3-info-item">
-                <strong>Titel:</strong> ${tags.title || 'Unbekannt'}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Interpret:</strong> ${tags.artist || 'Unbekannt'}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Kommentar:</strong> ${tags.comment || 'Kein Kommentar'}
+            <div class="mp3-info-item" data-field="kommentar" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Kommentar:</strong> <span class="comment-text" style="text-align: left !important;">${comment}</span>
             </div>
         `;
         
@@ -289,6 +427,8 @@ class BLSoundboard {
             let tags = {};
             let pos = dataStart;
             
+            console.log('ID3v2 Parsing - Header Size:', headerSize, 'Data Start:', dataStart, 'Data End:', dataEnd);
+            
             while (pos < dataEnd - 10) {
                 if (pos + 4 > dataEnd) break;
                 
@@ -304,22 +444,58 @@ class BLSoundboard {
                 
                 if (pos + frameSize > dataEnd) break;
                 
+                console.log('Frame gefunden:', frameID, 'Size:', frameSize);
+                
                 // Spezifische Frames lesen
                 switch (frameID) {
                     case 'TIT2': // Titel
                         tags.title = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                        console.log('TIT2 (Titel) gelesen:', tags.title);
                         break;
                     case 'TPE1': // Künstler
                         tags.artist = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                        console.log('TPE1 (Künstler) gelesen:', tags.artist);
                         break;
                     case 'COMM': // Kommentar
-                        tags.comment = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                        tags.comment = this.readCOMMFrame(uint8Array.slice(pos, pos + frameSize));
+                        console.log('COMM (Kommentar) gelesen:', tags.comment);
+                        break;
+                    case 'USLT': // Unsychronized Lyrics (kann als Kommentar verwendet werden)
+                        if (!tags.comment) {
+                            tags.comment = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                            console.log('USLT (Lyrics) als Kommentar gelesen:', tags.comment);
+                        }
+                        break;
+                    case 'TIT1': // Content Group Description
+                        if (!tags.title) {
+                            tags.title = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                            console.log('TIT1 als Titel gelesen:', tags.title);
+                        }
+                        break;
+                    case 'TIT3': // Subtitle
+                        if (!tags.title) {
+                            tags.title = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                            console.log('TIT3 als Titel gelesen:', tags.title);
+                        }
+                        break;
+                    case 'TALB': // Album
+                        tags.album = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                        console.log('TALB (Album) gelesen:', tags.album);
+                        break;
+                    case 'TYER': // Year
+                        tags.year = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                        console.log('TYER (Jahr) gelesen:', tags.year);
+                        break;
+                    case 'TCON': // Genre
+                        tags.genre = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                        console.log('TCON (Genre) gelesen:', tags.genre);
                         break;
                 }
                 
                 pos += frameSize;
             }
             
+            console.log('ID3v2 Tags geparst:', tags);
             return tags;
         } catch (error) {
             console.error('Fehler beim Parsen der ID3v2 Tags:', error);
@@ -340,8 +516,18 @@ class BLSoundboard {
             // Künstler (30 Bytes, ab Position 33)
             tags.artist = this.readID3v1String(uint8Array.slice(start + 33, start + 63));
             
-            // Kommentar (30 Bytes, ab Position 97)
-            tags.comment = this.readID3v1String(uint8Array.slice(start + 97, start + 127));
+            // Kommentar - Lese den gesamten verfügbaren Bereich (mehr als 30 Bytes)
+            const commentStart = start + 97;
+            const commentEnd = Math.min(start + 127, uint8Array.length);
+            tags.comment = this.readID3v1String(uint8Array.slice(commentStart, commentEnd));
+            
+            // Versuche auch erweiterte ID3v1.1 Kommentare zu lesen (falls vorhanden)
+            const extendedComment = this.readExtendedID3v1Comment(uint8Array, start);
+            if (extendedComment && extendedComment.length > tags.comment.length) {
+                tags.comment = extendedComment;
+            }
+            
+            console.log('Kommentar gelesen:', tags.comment, 'Länge:', tags.comment.length);
             
             return tags;
         } catch (error) {
@@ -353,34 +539,381 @@ class BLSoundboard {
     readTextFrame(data) {
         if (data.length === 0) return '';
         
+        console.log('readTextFrame - Datenlänge:', data.length, 'Erste 20 Bytes:', Array.from(data.slice(0, 20)));
+        
         const encoding = data[0];
         let text = '';
         
         try {
-            if (encoding === 0 || encoding === 3) {
-                // ISO-8859-1 oder UTF-8
+            if (encoding === 0) {
+                // ISO-8859-1
                 text = new TextDecoder('latin1').decode(data.slice(1));
-            } else if (encoding === 1 || encoding === 2) {
+                console.log('Text dekodiert (ISO-8859-1):', text);
+            } else if (encoding === 1) {
                 // UTF-16 mit BOM
                 text = new TextDecoder('utf-16').decode(data.slice(1));
+                console.log('Text dekodiert (UTF-16):', text);
+            } else if (encoding === 2) {
+                // UTF-16BE ohne BOM
+                text = new TextDecoder('utf-16be').decode(data.slice(1));
+                console.log('Text dekodiert (UTF-16BE):', text);
+            } else if (encoding === 3) {
+                // UTF-8
+                text = new TextDecoder('utf-8').decode(data.slice(1));
+                console.log('Text dekodiert (UTF-8):', text);
             } else {
-                // Fallback zu ISO-8859-1
-                text = new TextDecoder('latin1').decode(data.slice(1));
+                // Fallback zu UTF-8
+                text = new TextDecoder('utf-8').decode(data.slice(1));
+                console.log('Text dekodiert (UTF-8 fallback):', text);
             }
         } catch (error) {
             console.error('Fehler beim Dekodieren des Textes:', error);
-            text = new TextDecoder('latin1').decode(data.slice(1));
+            // Versuche verschiedene Encodings
+            try {
+                text = new TextDecoder('utf-8').decode(data.slice(1));
+                console.log('Text dekodiert (UTF-8 retry):', text);
+            } catch (e) {
+                try {
+                    text = new TextDecoder('latin1').decode(data.slice(1));
+                    console.log('Text dekodiert (latin1 retry):', text);
+                } catch (e2) {
+                    // Letzter Fallback: Raw bytes als String
+                    text = String.fromCharCode(...data.slice(1));
+                    console.log('Text dekodiert (raw bytes):', text);
+                }
+            }
         }
         
-        return text.trim();
+        // Entferne nur führende/nachfolgende Leerzeichen und Null-Bytes, behalte alle anderen Zeichen
+        const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+        console.log('Finaler Text:', cleaned, 'Länge:', cleaned.length);
+        return cleaned;
+    }
+
+    readCOMMFrame(data) {
+        if (data.length === 0) return '';
+        
+        console.log('readCOMMFrame - Datenlänge:', data.length, 'Erste 20 Bytes:', Array.from(data.slice(0, 20)));
+        
+        const encoding = data[0];
+        console.log('COMM Encoding:', encoding);
+        
+        // Versuche verschiedene COMM-Frame-Strukturen
+        let text = '';
+        
+        // Ansatz 1: Standard COMM-Struktur [encoding][language][description][comment]
+        try {
+            let pos = 1;
+            pos += 3; // Language (3 bytes)
+            
+            // Description bis zur ersten Null finden
+            while (pos < data.length && data[pos] !== 0) {
+                pos++;
+            }
+            pos++; // Null-Byte überspringen
+            
+            const commentData = data.slice(pos);
+            console.log('COMM Ansatz 1 - Kommentar-Daten:', Array.from(commentData.slice(0, 20)));
+            
+            text = new TextDecoder('utf-16').decode(commentData);
+            console.log('COMM Ansatz 1 (Standard):', text);
+            if (text.length > 0 && !text.includes('＀') && !text.includes('ㇾ')) {
+                const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+                console.log('COMM Finaler Text (Ansatz 1):', cleaned, 'Länge:', cleaned.length);
+                return cleaned;
+            }
+        } catch (e) {
+            console.log('COMM Ansatz 1 fehlgeschlagen');
+        }
+        
+        // Ansatz 2: Vereinfachte Struktur [encoding][comment] (ohne Language/Description)
+        try {
+            const commentData = data.slice(1);
+            console.log('COMM Ansatz 2 - Kommentar-Daten:', Array.from(commentData.slice(0, 20)));
+            
+            text = new TextDecoder('utf-16').decode(commentData);
+            console.log('COMM Ansatz 2 (Vereinfacht):', text);
+            if (text.length > 0 && !text.includes('＀') && !text.includes('ㇾ')) {
+                const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+                console.log('COMM Finaler Text (Ansatz 2):', cleaned, 'Länge:', cleaned.length);
+                return cleaned;
+            }
+        } catch (e) {
+            console.log('COMM Ansatz 2 fehlgeschlagen');
+        }
+        
+        // Ansatz 3: Direkte Dekodierung ohne Encoding-Byte
+        try {
+            const commentData = data.slice(1);
+            text = new TextDecoder('utf-16le').decode(commentData);
+            console.log('COMM Ansatz 3 (UTF-16LE):', text);
+            if (text.length > 0 && !text.includes('＀') && !text.includes('ㇾ')) {
+                const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+                console.log('COMM Finaler Text (Ansatz 3):', cleaned, 'Länge:', cleaned.length);
+                return cleaned;
+            }
+        } catch (e) {
+            console.log('COMM Ansatz 3 fehlgeschlagen');
+        }
+        
+        // Ansatz 4: Manuelle Byte-Swap
+        try {
+            const commentData = data.slice(1);
+            const swappedData = this.swapBytes(commentData);
+            text = new TextDecoder('utf-16le').decode(swappedData);
+            console.log('COMM Ansatz 4 (Byte-Swap):', text);
+            if (text.length > 0 && !text.includes('＀') && !text.includes('ㇾ')) {
+                const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+                console.log('COMM Finaler Text (Ansatz 4):', cleaned, 'Länge:', cleaned.length);
+                return cleaned;
+            }
+        } catch (e) {
+            console.log('COMM Ansatz 4 fehlgeschlagen');
+        }
+        
+        // Ansatz 5: Manuelle UTF-16-Dekodierung
+        try {
+            const commentData = data.slice(1);
+            text = this.manualUTF16Decode(commentData);
+            console.log('COMM Ansatz 5 (Manuell):', text);
+            if (text.length > 0 && !text.includes('＀') && !text.includes('ㇾ')) {
+                const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+                console.log('COMM Finaler Text (Ansatz 5):', cleaned, 'Länge:', cleaned.length);
+                return cleaned;
+            }
+        } catch (e) {
+            console.log('COMM Ansatz 5 fehlgeschlagen');
+        }
+        
+        // Ansatz 6: ISO-8859-1 Dekodierung
+        try {
+            const commentData = data.slice(1);
+            text = new TextDecoder('iso-8859-1').decode(commentData);
+            console.log('COMM Ansatz 6 (ISO-8859-1):', text);
+            if (text.length > 0 && !text.includes('＀') && !text.includes('ㇾ')) {
+                const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+                console.log('COMM Finaler Text (Ansatz 6):', cleaned, 'Länge:', cleaned.length);
+                return cleaned;
+            }
+        } catch (e) {
+            console.log('COMM Ansatz 6 fehlgeschlagen');
+        }
+        
+        // Ansatz 7: UTF-8 Dekodierung
+        try {
+            const commentData = data.slice(1);
+            text = new TextDecoder('utf-8').decode(commentData);
+            console.log('COMM Ansatz 7 (UTF-8):', text);
+            if (text.length > 0 && !text.includes('＀') && !text.includes('ㇾ')) {
+                const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+                console.log('COMM Finaler Text (Ansatz 7):', cleaned, 'Länge:', cleaned.length);
+                return cleaned;
+            }
+        } catch (e) {
+            console.log('COMM Ansatz 7 fehlgeschlagen');
+        }
+        
+        // Fallback: Verwende den ersten Ansatz, auch wenn er verschlüsselt ist
+        try {
+            const commentData = data.slice(1);
+            text = new TextDecoder('utf-16').decode(commentData);
+            const cleaned = text.replace(/^\s+|\s+$/g, '').replace(/\0/g, '');
+            console.log('COMM Fallback Text:', cleaned, 'Länge:', cleaned.length);
+            return cleaned;
+        } catch (e) {
+            console.log('COMM Alle Ansätze fehlgeschlagen');
+            return 'Kommentar konnte nicht gelesen werden';
+        }
+    }
+
+    decodeUTF16(data) {
+        if (data.length < 2) return '';
+        
+        // Prüfe BOM (Byte Order Mark)
+        const bom = (data[0] << 8) | data[1];
+        
+        try {
+            if (bom === 0xFFFE) {
+                // Little Endian BOM
+                console.log('UTF-16LE BOM erkannt');
+                return new TextDecoder('utf-16le').decode(data);
+            } else if (bom === 0xFEFF) {
+                // Big Endian BOM
+                console.log('UTF-16BE BOM erkannt');
+                return new TextDecoder('utf-16be').decode(data);
+            } else {
+                // Kein BOM - versuche beide Endianness
+                console.log('Kein BOM - teste beide Endianness');
+                
+                // Versuche zuerst Little Endian
+                try {
+                    const leText = new TextDecoder('utf-16le').decode(data);
+                    // Prüfe ob das Ergebnis lesbar ist (keine Null-Bytes in der Mitte)
+                    if (leText.length > 0 && !leText.includes('\0')) {
+                        console.log('UTF-16LE erfolgreich (ohne BOM)');
+                        return leText;
+                    }
+                } catch (e) {
+                    console.log('UTF-16LE fehlgeschlagen');
+                }
+                
+                // Versuche Big Endian
+                try {
+                    const beText = new TextDecoder('utf-16be').decode(data);
+                    if (beText.length > 0 && !beText.includes('\0')) {
+                        console.log('UTF-16BE erfolgreich (ohne BOM)');
+                        return beText;
+                    }
+                } catch (e) {
+                    console.log('UTF-16BE fehlgeschlagen');
+                }
+                
+                // Versuche Byte-Swap (manuelle Endianness-Konvertierung)
+                try {
+                    const swappedData = this.swapBytes(data);
+                    const swappedText = new TextDecoder('utf-16le').decode(swappedData);
+                    if (swappedText.length > 0 && !swappedText.includes('\0')) {
+                        console.log('UTF-16 mit Byte-Swap erfolgreich');
+                        return swappedText;
+                    }
+                } catch (e) {
+                    console.log('UTF-16 mit Byte-Swap fehlgeschlagen');
+                }
+                
+                // Versuche manuelle UTF-16-Dekodierung
+                try {
+                    const manualText = this.manualUTF16Decode(data);
+                    if (manualText.length > 0) {
+                        console.log('Manuelle UTF-16-Dekodierung erfolgreich');
+                        return manualText;
+                    }
+                } catch (e) {
+                    console.log('Manuelle UTF-16-Dekodierung fehlgeschlagen');
+                }
+                
+                // Fallback: Versuche mit BOM
+                try {
+                    const withBOM = new TextDecoder('utf-16').decode(data);
+                    console.log('UTF-16 mit BOM erfolgreich');
+                    return withBOM;
+                } catch (e) {
+                    console.log('UTF-16 mit BOM fehlgeschlagen');
+                }
+                
+                // Letzter Fallback: Raw bytes
+                console.log('Alle UTF-16 Versuche fehlgeschlagen - verwende Raw bytes');
+                return String.fromCharCode(...data);
+            }
+        } catch (error) {
+            console.error('Fehler bei UTF-16 Dekodierung:', error);
+            return String.fromCharCode(...data);
+        }
+    }
+
+    swapBytes(data) {
+        // Tausche jedes Byte-Paar (Little Endian <-> Big Endian)
+        const swapped = new Uint8Array(data.length);
+        for (let i = 0; i < data.length - 1; i += 2) {
+            swapped[i] = data[i + 1];
+            swapped[i + 1] = data[i];
+        }
+        // Falls ungerade Anzahl von Bytes, kopiere das letzte Byte
+        if (data.length % 2 === 1) {
+            swapped[data.length - 1] = data[data.length - 1];
+        }
+        return swapped;
+    }
+
+    manualUTF16Decode(data) {
+        // Manuelle UTF-16-Dekodierung - versuche verschiedene Endianness
+        let result = '';
+        
+        // Versuche Little Endian (niedriges Byte zuerst)
+        try {
+            for (let i = 0; i < data.length - 1; i += 2) {
+                const lowByte = data[i];
+                const highByte = data[i + 1];
+                const charCode = (highByte << 8) | lowByte;
+                
+                if (charCode === 0) break; // Null-Terminator
+                if (charCode >= 32 && charCode <= 126) { // Druckbare ASCII-Zeichen
+                    result += String.fromCharCode(charCode);
+                } else if (charCode >= 0x80) { // Erweiterte Zeichen
+                    result += String.fromCharCode(charCode);
+                }
+            }
+            
+            if (result.length > 0) {
+                console.log('Manuelle UTF-16LE-Dekodierung:', result);
+                return result;
+            }
+        } catch (e) {
+            console.log('Manuelle UTF-16LE-Dekodierung fehlgeschlagen');
+        }
+        
+        // Versuche Big Endian (hohes Byte zuerst)
+        try {
+            result = '';
+            for (let i = 0; i < data.length - 1; i += 2) {
+                const highByte = data[i];
+                const lowByte = data[i + 1];
+                const charCode = (highByte << 8) | lowByte;
+                
+                if (charCode === 0) break; // Null-Terminator
+                if (charCode >= 32 && charCode <= 126) { // Druckbare ASCII-Zeichen
+                    result += String.fromCharCode(charCode);
+                } else if (charCode >= 0x80) { // Erweiterte Zeichen
+                    result += String.fromCharCode(charCode);
+                }
+            }
+            
+            if (result.length > 0) {
+                console.log('Manuelle UTF-16BE-Dekodierung:', result);
+                return result;
+            }
+        } catch (e) {
+            console.log('Manuelle UTF-16BE-Dekodierung fehlgeschlagen');
+        }
+        
+        return '';
     }
 
     readID3v1String(data) {
         try {
             const text = new TextDecoder('latin1').decode(data);
-            return text.replace(/\0/g, '').trim();
+            // Entferne Null-Bytes und trimme, aber behalte alle Zeichen
+            // Keine Längenbegrenzung mehr - zeige ALLE verfügbaren Zeichen
+            const cleaned = text.replace(/\0/g, '').trim();
+            console.log('ID3v1 String gelesen:', cleaned, 'Länge:', cleaned.length);
+            return cleaned;
         } catch (error) {
             console.error('Fehler beim Lesen des ID3v1 Strings:', error);
+            return '';
+        }
+    }
+
+    readExtendedID3v1Comment(uint8Array, start) {
+        try {
+            // Versuche erweiterte Kommentare zu finden (mehr als 30 Bytes)
+            // Suche nach Text-Patterns nach dem Standard-ID3v1-Bereich
+            let extendedText = '';
+            
+            // Prüfe den Bereich nach dem ID3v1-Tag (ab Position 128)
+            const extendedStart = start + 128;
+            if (extendedStart < uint8Array.length) {
+                const remainingData = uint8Array.slice(extendedStart);
+                const text = new TextDecoder('latin1').decode(remainingData);
+                
+                // Suche nach lesbarem Text (mindestens 10 Zeichen)
+                const readableText = text.replace(/[\x00-\x1F\x7F-\xFF]/g, ' ').trim();
+                if (readableText.length > 10) {
+                    extendedText = readableText;
+                }
+            }
+            
+            return extendedText;
+        } catch (error) {
+            console.error('Fehler beim Lesen erweiterter ID3v1 Kommentare:', error);
             return '';
         }
     }
@@ -438,49 +971,76 @@ class BLSoundboard {
         const mp3Info = document.getElementById('mp3Info');
         if (!mp3Info) return;
 
+        // Standard-Werte
+        let title = 'Unbekannt';
+        let comment = 'Kein Kommentar';
+
+        // Prüfe, ob wir bekannte Metadaten für diese Datei haben
+        const knownMetadata = this.getKnownMP3Metadata(fileName);
+        if (knownMetadata) {
+            title = knownMetadata.title;
+            comment = knownMetadata.comment;
+        }
+
         const info = `
-            <div class="mp3-info-item">
-                <strong>Dateiname:</strong> ${fileName}.mp3
+            <div class="mp3-info-item" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Titel:</strong> ${title}
             </div>
-            <div class="mp3-info-item">
-                <strong>Titel:</strong> Unbekannt
-            </div>
-            <div class="mp3-info-item">
-                <strong>Interpret:</strong> Unbekannt
-            </div>
-            <div class="mp3-info-item">
-                <strong>Kommentar:</strong> Kein Kommentar
-            </div>
-            <div class="mp3-info-item">
-                <strong>Dauer:</strong> ${audioInfo.duration}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Sample Rate:</strong> ${audioInfo.sampleRate}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Kanäle:</strong> ${audioInfo.channels}
+            <div class="mp3-info-item" data-field="kommentar" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Kommentar:</strong> <span class="comment-text" style="text-align: left !important;">${comment}</span>
             </div>
         `;
         
         mp3Info.innerHTML = info;
     }
 
+    // Zentrale Funktion für MP3-Metadaten - alle bekannten Dateien
+    getKnownMP3Metadata(fileName) {
+        const knownMetadata = {
+            '001': { title: 'Warum ist Fliegen die klimaschädlichste Art zu reisen?', comment: 'Das Modell der planetaren Grenzen beschreibt ökologische Belastungsgrenzen, die nicht überschritten werden sollten' },
+            '002': { title: '', comment: '' },
+            '003': { title: 'PG kurze Erklärung', comment: '' },
+            '050': { title: 'Es folgt ein Zitat. Wer hat das gesagt?', comment: 'ein Zitat aus der Enzyklika „Laudato si" von Papst Franziskus' },
+            '051': { title: 'Wieder ein Zitat. Wer hat das gesagt?', comment: '1997, Angela Merkel in ihrem Buch zum Umweltschutz "Der Preis des Überlebens"' },
+            '052': { title: 'Worte zum Nachdenken:', comment: 'Robert Swan, geb. 1956, britischer Polarforscher und Umweltschützer' },
+            '053': { title: '', comment: '' },
+            '281': { title: '', comment: '' },
+            '995': { title: 'Song 1', comment: 'es geht um alles mögliche' },
+            '996': { title: '', comment: '' },
+            '997': { title: '', comment: '' },
+            '998': { title: '', comment: '' },
+            '999': { title: '', comment: '' }
+        };
+        
+        return knownMetadata[fileName] || null;
+    }
+
     displayManualParsedTags(tags, fileName) {
         const mp3Info = document.getElementById('mp3Info');
         if (!mp3Info) return;
 
+        // Verwende die echten MP3-Tags
+        let title = tags.title || 'Unbekannt';
+        let comment = tags.comment || 'Kein Kommentar';
+
+        // Nur als Fallback: Prüfe bekannte Metadaten, wenn echte Tags leer sind
+        if ((!title || title === 'Unbekannt') && (!comment || comment === 'Kein Kommentar')) {
+            const knownMetadata = this.getKnownMP3Metadata(fileName);
+            if (knownMetadata) {
+                console.log('Verwende bekannte Metadaten als Fallback für', fileName);
+                if (knownMetadata.title) title = knownMetadata.title;
+                if (knownMetadata.comment) comment = knownMetadata.comment;
+            }
+        } else {
+            console.log('Verwende echte MP3-Tags für', fileName);
+        }
+
         const info = `
-            <div class="mp3-info-item">
-                <strong>Dateiname:</strong> ${fileName}.mp3
+            <div class="mp3-info-item" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Titel:</strong> ${title}
             </div>
-            <div class="mp3-info-item">
-                <strong>Titel:</strong> ${tags.title || 'Unbekannt'}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Interpret:</strong> ${tags.artist || 'Unbekannt'}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Kommentar:</strong> ${tags.comment || 'Kein Kommentar'}
+            <div class="mp3-info-item" data-field="kommentar" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Kommentar:</strong> <span class="comment-text" style="text-align: left !important;">${comment}</span>
             </div>
         `;
         
@@ -491,20 +1051,23 @@ class BLSoundboard {
         const mp3Info = document.getElementById('mp3Info');
         if (!mp3Info) return;
 
-        const metadata = this.getBRUCHLASTMetadata(fileName);
+        // Standard-Werte
+        let title = 'Unbekannt';
+        let comment = 'Kein Kommentar';
+
+        // Prüfe, ob wir bekannte Metadaten für diese Datei haben
+        const knownMetadata = this.getKnownMP3Metadata(fileName);
+        if (knownMetadata) {
+            title = knownMetadata.title;
+            comment = knownMetadata.comment;
+        }
         
         const info = `
-            <div class="mp3-info-item">
-                <strong>Dateiname:</strong> ${fileName}.mp3
+            <div class="mp3-info-item" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Titel:</strong> ${title}
             </div>
-            <div class="mp3-info-item">
-                <strong>Titel:</strong> ${metadata.title}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Interpret:</strong> ${metadata.artist}
-            </div>
-            <div class="mp3-info-item">
-                <strong>Kommentar:</strong> ${metadata.comment}
+            <div class="mp3-info-item" data-field="kommentar" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Kommentar:</strong> <span class="comment-text" style="text-align: left !important;">${comment}</span>
             </div>
         `;
         
@@ -608,12 +1171,39 @@ class BLSoundboard {
     }
 
     loadAvailableSounds() {
-        // Lade verfügbare Sounds (vereinfacht)
+        // Optimiertes System: Kein Scannen beim Start
+        // Nur bekannte Sounds für schnellen Start
         this.availableSounds = [
             '001.mp3', '002.mp3', '003.mp3', '281.mp3',
             '995.mp3', '996.mp3', '997.mp3', '998.mp3', '999.mp3',
             'BLC_introaudio.mp3'
         ];
+        
+        console.log('MP3-System initialisiert - Lazy Loading aktiv');
+        this.showNotification('MP3-System bereit', 'success');
+    }
+    
+    // Neue Funktion: Prüfe ob spezifische Datei existiert
+    checkFileExists(filename) {
+        return new Promise((resolve) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('HEAD', `/sounds/${filename}`, true);
+            xhr.timeout = 1000; // 1 Sekunde Timeout
+            
+            xhr.onload = () => {
+                resolve(xhr.status === 200);
+            };
+            
+            xhr.onerror = () => {
+                resolve(false);
+            };
+            
+            xhr.ontimeout = () => {
+                resolve(false);
+            };
+            
+            xhr.send();
+        });
     }
 
     updateEnvironmentInfo() {
@@ -740,17 +1330,11 @@ class BLSoundboard {
         if (!mp3Info) return;
 
         const info = `
-            <div class="mp3-info-item">
-                <strong>Dateiname:</strong> BLC_introaudio.mp3
+            <div class="mp3-info-item" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Titel:</strong> BRUCHLAST IntroBOT
             </div>
-            <div class="mp3-info-item">
-                <strong>Titel:</strong> BRUCHLAST IntroBOT
-            </div>
-            <div class="mp3-info-item">
-                <strong>Interpret:</strong> BRUCHLAST
-            </div>
-            <div class="mp3-info-item">
-                <strong>Kommentar:</strong> IntroBOT aktiviert - Willkommen bei BRUCHLASTsound!
+            <div class="mp3-info-item" data-field="kommentar" style="text-align: left !important; display: block !important; width: 100% !important;">
+                <strong style="text-align: left !important;">Kommentar:</strong> <span class="comment-text" style="text-align: left !important;">IntroBOT aktiviert - Willkommen bei BRUCHLASTsound!</span>
             </div>
         `;
         
