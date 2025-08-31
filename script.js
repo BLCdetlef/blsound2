@@ -195,7 +195,7 @@ class BLSoundboard {
         if (typeof jsmediatags !== 'undefined') {
             this.loadWithJSMediaTags(filePath, fileName);
         } else {
-            this.loadFileWithXHR(filePath, fileName);
+        this.loadFileWithXHR(filePath, fileName);
         }
     }
 
@@ -462,7 +462,7 @@ class BLSoundboard {
                         break;
                     case 'USLT': // Unsychronized Lyrics (kann als Kommentar verwendet werden)
                         if (!tags.comment) {
-                            tags.comment = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
+                        tags.comment = this.readTextFrame(uint8Array.slice(pos, pos + frameSize));
                             console.log('USLT (Lyrics) als Kommentar gelesen:', tags.comment);
                         }
                         break;
@@ -574,7 +574,7 @@ class BLSoundboard {
                 console.log('Text dekodiert (UTF-8 retry):', text);
             } catch (e) {
                 try {
-                    text = new TextDecoder('latin1').decode(data.slice(1));
+            text = new TextDecoder('latin1').decode(data.slice(1));
                     console.log('Text dekodiert (latin1 retry):', text);
                 } catch (e2) {
                     // Letzter Fallback: Raw bytes als String
