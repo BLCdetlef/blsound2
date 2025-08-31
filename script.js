@@ -1174,7 +1174,7 @@ class BLSoundboard {
         // Optimiertes System: Kein Scannen beim Start
         // Nur bekannte Sounds für schnellen Start
         this.availableSounds = [
-            '001.mp3', '002.mp3', '003.mp3', '281.mp3',
+            '001.mp3', '002.mp3', '003.mp3', '101.mp3', '102.mp3', '105.mp3', '106.mp3', '281.mp3',
             '995.mp3', '996.mp3', '997.mp3', '998.mp3', '999.mp3',
             'BLC_introaudio.mp3'
         ];
