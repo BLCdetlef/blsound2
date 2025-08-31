@@ -18,7 +18,7 @@ class BLSoundboard {
 
     checkServerStatus() {
         const xhr = new XMLHttpRequest();
-        xhr.open('HEAD', '/sounds/001.mp3', true);
+        xhr.open('HEAD', 'sounds/001.mp3', true);
         xhr.timeout = 5000;
         
         xhr.onload = () => {
@@ -1187,7 +1187,7 @@ class BLSoundboard {
     checkFileExists(filename) {
         return new Promise((resolve) => {
             const xhr = new XMLHttpRequest();
-            xhr.open('HEAD', `/sounds/${filename}`, true);
+            xhr.open('HEAD', `sounds/${filename}`, true);
             xhr.timeout = 1000; // 1 Sekunde Timeout
             
             xhr.onload = () => {
