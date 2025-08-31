@@ -7,10 +7,10 @@ class BLSoundboard {
         this.notificationTimeout = null;
     }
 
-    init() {
+    async init() {
         this.checkServerStatus();
         this.setupEventListeners();
-        this.loadAvailableSounds();
+        await this.loadAvailableSounds();
         this.updateEnvironmentInfo();
         this.detectTabletEnvironment();
         this.initCharts();
@@ -1170,17 +1170,67 @@ class BLSoundboard {
         }, 5000);
     }
 
-    loadAvailableSounds() {
-        // Optimiertes System: Kein Scannen beim Start
-        // Nur bekannte Sounds für schnellen Start
-        this.availableSounds = [
-            '001.mp3', '002.mp3', '003.mp3', '101.mp3', '102.mp3', '105.mp3', '106.mp3', '281.mp3',
+    async loadAvailableSounds() {
+        // Dynamisches System: Scanne alle verfügbaren MP3-Dateien
+        this.availableSounds = [];
+        
+        // Bekannte MP3-Dateien (als Fallback)
+        const knownFiles = [
+            '001.mp3', '002.mp3', '003.mp3', '101.mp3', '102.mp3', '103.mp3', '104.mp3', '105.mp3', '106.mp3', '281.mp3',
             '995.mp3', '996.mp3', '997.mp3', '998.mp3', '999.mp3',
             'BLC_introaudio.mp3'
         ];
         
-        console.log('MP3-System initialisiert - Lazy Loading aktiv');
-        this.showNotification('MP3-System bereit', 'success');
+        // Dynamisches Scannen: Prüfe bekannte Dateien und erweitere bei Bedarf
+        for (const filename of knownFiles) {
+            const exists = await this.checkFileExists(filename);
+            if (exists) {
+                this.availableSounds.push(filename);
+            }
+        }
+        
+        // Erweitere das Scannen für weitere mögliche Dateien (000-999)
+        await this.scanForAdditionalMP3s();
+        
+        console.log('MP3-System initialisiert - Dynamisches Scannen aktiv');
+        console.log('Verfügbare Sounds:', this.availableSounds);
+        this.showNotification(`MP3-System bereit - ${this.availableSounds.length} Dateien gefunden`, 'success');
+    }
+    
+    async scanForAdditionalMP3s() {
+        // Scanne systematisch nach weiteren MP3-Dateien
+        const scanPromises = [];
+        
+        // Scanne 000-999 (außer bereits bekannte)
+        for (let i = 0; i <= 999; i++) {
+            const filename = i.toString().padStart(3, '0') + '.mp3';
+            
+            // Überspringe bereits bekannte Dateien
+            if (this.availableSounds.includes(filename)) {
+                continue;
+            }
+            
+            // Prüfe asynchron ob Datei existiert
+            scanPromises.push(
+                this.checkFileExists(filename).then(exists => {
+                    if (exists) {
+                        this.availableSounds.push(filename);
+                        console.log('Neue MP3-Datei gefunden:', filename);
+                    }
+                    return exists;
+                })
+            );
+        }
+        
+        // Warte auf alle Scans (mit begrenzter Parallelität für Performance)
+        const batchSize = 10;
+        for (let i = 0; i < scanPromises.length; i += batchSize) {
+            const batch = scanPromises.slice(i, i + batchSize);
+            await Promise.all(batch);
+        }
+        
+        // Sortiere die Liste
+        this.availableSounds.sort();
     }
     
     // Neue Funktion: Prüfe ob spezifische Datei existiert
@@ -1343,7 +1393,7 @@ class BLSoundboard {
 }
 
 // Initialisierung
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const soundboard = new BLSoundboard();
-    soundboard.init();
+    await soundboard.init();
 });
