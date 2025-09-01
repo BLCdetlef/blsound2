@@ -1176,7 +1176,8 @@ class BLSoundboard {
         
         // Bekannte MP3-Dateien (als Fallback)
         const knownFiles = [
-            '001.mp3', '002.mp3', '003.mp3', '101.mp3', '102.mp3', '103.mp3', '104.mp3', '105.mp3', '106.mp3', '281.mp3',
+            '001.mp3', '002.mp3', '003.mp3', '050.mp3', '051.mp3', '052.mp3', '053.mp3',
+            '101.mp3', '102.mp3', '103.mp3', '104.mp3', '105.mp3', '106.mp3', '281.mp3',
             '995.mp3', '996.mp3', '997.mp3', '998.mp3', '999.mp3',
             'BLC_introaudio.mp3'
         ];
@@ -1189,10 +1190,10 @@ class BLSoundboard {
             }
         }
         
-        // Erweitere das Scannen für weitere mögliche Dateien (000-999)
+        // Erweitere das Scannen für weitere mögliche Dateien (nur in sinnvollen Bereichen)
         await this.scanForAdditionalMP3s();
         
-        console.log('MP3-System initialisiert - Dynamisches Scannen aktiv');
+        console.log('MP3-System initialisiert - Optimiertes Scannen aktiv');
         console.log('Verfügbare Sounds:', this.availableSounds);
         this.showNotification(`MP3-System bereit - ${this.availableSounds.length} Dateien gefunden`, 'success');
     }
@@ -1201,29 +1202,40 @@ class BLSoundboard {
         // Scanne systematisch nach weiteren MP3-Dateien
         const scanPromises = [];
         
-        // Scanne 000-999 (außer bereits bekannte)
-        for (let i = 0; i <= 999; i++) {
-            const filename = i.toString().padStart(3, '0') + '.mp3';
-            
-            // Überspringe bereits bekannte Dateien
-            if (this.availableSounds.includes(filename)) {
-                continue;
+        // Scanne nur in sinnvollen Bereichen (nicht 000-999 komplett)
+        const scanRanges = [
+            // Bekannte Bereiche basierend auf vorhandenen Dateien
+            { start: 0, end: 10 },    // 000-010
+            { start: 50, end: 60 },   // 050-060  
+            { start: 100, end: 110 }, // 100-110
+            { start: 280, end: 285 }, // 280-285
+            { start: 990, end: 999 }  // 990-999
+        ];
+        
+        for (const range of scanRanges) {
+            for (let i = range.start; i <= range.end; i++) {
+                const filename = i.toString().padStart(3, '0') + '.mp3';
+                
+                // Überspringe bereits bekannte Dateien
+                if (this.availableSounds.includes(filename)) {
+                    continue;
+                }
+                
+                // Prüfe asynchron ob Datei existiert
+                scanPromises.push(
+                    this.checkFileExists(filename).then(exists => {
+                        if (exists) {
+                            this.availableSounds.push(filename);
+                            console.log('Neue MP3-Datei gefunden:', filename);
+                        }
+                        return exists;
+                    })
+                );
             }
-            
-            // Prüfe asynchron ob Datei existiert
-            scanPromises.push(
-                this.checkFileExists(filename).then(exists => {
-                    if (exists) {
-                        this.availableSounds.push(filename);
-                        console.log('Neue MP3-Datei gefunden:', filename);
-                    }
-                    return exists;
-                })
-            );
         }
         
         // Warte auf alle Scans (mit begrenzter Parallelität für Performance)
-        const batchSize = 10;
+        const batchSize = 5;
         for (let i = 0; i < scanPromises.length; i += batchSize) {
             const batch = scanPromises.slice(i, i + batchSize);
             await Promise.all(batch);
@@ -1238,17 +1250,19 @@ class BLSoundboard {
         return new Promise((resolve) => {
             const xhr = new XMLHttpRequest();
             xhr.open('HEAD', `sounds/${filename}`, true);
-            xhr.timeout = 1000; // 1 Sekunde Timeout
+            xhr.timeout = 500; // 0.5 Sekunden Timeout für schnellere Scans
             
             xhr.onload = () => {
                 resolve(xhr.status === 200);
             };
             
             xhr.onerror = () => {
+                // Stille Behandlung - keine Console-Logs für erwartete 404s
                 resolve(false);
             };
             
             xhr.ontimeout = () => {
+                // Stille Behandlung - keine Console-Logs für Timeouts
                 resolve(false);
             };
             
